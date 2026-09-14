@@ -1,0 +1,73 @@
+# WireGuard gateway lab. Real kernel WireGuard + nftables inside Docker's
+# Linux VM. Run `make keys render up` from the project root first.
+name: wgdrift
+
+x-node: &node
+  image: wgdrift-lab
+  build: .
+  cap_add: [NET_ADMIN]
+  init: true
+
+networks:
+  wan:
+    ipam: {config: [{subnet: 10.200.0.0/24}]}
+  lan:
+    ipam: {config: [{subnet: 10.100.0.0/24}]}
+
+services:
+  gateway:
+    <<: *node
+    hostname: gateway
+    # privileged only so drift scenarios can flip /proc/sys/net/ipv4/ip_forward
+    # at runtime; on a real gateway wgdrift runs as root on the host.
+    privileged: true
+    sysctls:
+      net.ipv4.ip_forward: 1
+    networks:
+      wan: {ipv4_address: 10.200.0.2}
+      lan: {ipv4_address: 10.100.0.2}
+    volumes:
+      - ./gateway:/etc/wgdrift:ro
+      - ./entry:/entry:ro
+      - ..:/opt/wgdrift:ro        # live project source for `python3 -m wgdrift`
+    command: /entry/gateway.sh
+
+  alice:
+    <<: *node
+    hostname: alice
+    networks: {wan: {ipv4_address: 10.200.0.11}}
+    volumes: [./peers/alice:/etc/wgdrift:ro, ./entry:/entry:ro]
+    command: /entry/peer.sh
+    depends_on: [gateway]
+
+  bob:
+    <<: *node
+    hostname: bob
+    networks: {wan: {ipv4_address: 10.200.0.12}}
+    volumes: [./peers/bob:/etc/wgdrift:ro, ./entry:/entry:ro]
+    command: /entry/peer.sh
+    depends_on: [gateway]
+
+  mallory:
+    <<: *node
+    hostname: mallory
+    networks: {wan: {ipv4_address: 10.200.0.13}}
+    volumes: [./peers/mallory:/etc/wgdrift:ro, ./entry:/entry:ro]
+    command: /entry/peer.sh
+    depends_on: [gateway]
+
+  app:
+    <<: *node
+    hostname: app
+    environment: {PORT: "8080", GATEWAY: 10.100.0.2, TUNNEL: 10.10.0.0/24}
+    networks: {lan: {ipv4_address: 10.100.0.10}}
+    volumes: [./entry:/entry:ro]
+    command: /entry/server.sh
+
+  db:
+    <<: *node
+    hostname: db
+    environment: {PORT: "5432", GATEWAY: 10.100.0.2, TUNNEL: 10.10.0.0/24}
+    networks: {lan: {ipv4_address: 10.100.0.20}}
+    volumes: [./entry:/entry:ro]
+    command: /entry/server.sh

@@ -1,0 +1,42 @@
+version: 1
+gateway:
+  interface: wg0
+  public_key: MdF7y2xI/CphHFe1kAm3ue7/UmrFXz31/3quT+Hw5H0=
+  listen_port: 51820
+  tunnel_network: 10.10.0.0/24
+  protected_networks:
+  - 10.100.0.0/24
+  nft_table: wgdrift
+peers:
+- name: alice
+  public_key: eMwZgix2WJWODeE/ElQNdb6F2LAOsjLLGU2Xmg0A2AA=
+  tunnel_ip: 10.10.0.2
+  role: admin
+- name: bob
+  public_key: lqchAaeQjIxYzsyn3uDrPmnke9ZW+ZOLDwqRAWwnmV0=
+  tunnel_ip: 10.10.0.3
+  role: developer
+targets:
+- name: app
+  address: 10.100.0.10
+  services:
+  - tcp/8080
+  - icmp
+- name: db
+  address: 10.100.0.20
+  services:
+  - tcp/5432
+  - icmp
+roles:
+  admin:
+    allow:
+    - dst: 10.100.0.0/24
+  developer:
+    allow:
+    - dst: 10.100.0.10/32
+      proto: tcp
+      ports:
+      - 8080
+safety:
+  admin_peers:
+  - alice

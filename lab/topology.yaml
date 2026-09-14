@@ -1,0 +1,34 @@
+# Single source of truth for the lab. `make render` turns this into
+# wg-quick configs, the gateway nftables ruleset and the declarative policy.
+tunnel_network: 10.10.0.0/24
+wan_network: 10.200.0.0/24      # "internet" between remote peers and the gateway
+lan_network: 10.100.0.0/24      # protected network behind the gateway
+
+gateway:
+  interface: wg0
+  listen_port: 51820
+  tunnel_ip: 10.10.0.1
+  wan_ip: 10.200.0.2
+  lan_ip: 10.100.0.2
+
+peers:
+  alice:   {tunnel_ip: 10.10.0.2, wan_ip: 10.200.0.11, role: admin,     enrolled: true}
+  bob:     {tunnel_ip: 10.10.0.3, wan_ip: 10.200.0.12, role: developer, enrolled: true}
+  # mallory has a perfectly valid key pair but is NOT in the gateway config.
+  # Later drift scenarios enrol her behind the policy's back.
+  mallory: {tunnel_ip: 10.10.0.4, wan_ip: 10.200.0.13, role: developer, enrolled: false}
+
+servers:
+  app: {lan_ip: 10.100.0.10, port: 8080}
+  db:  {lan_ip: 10.100.0.20, port: 5432}
+
+# What each role may reach through the gateway. Rendered into nftables
+# forward rules and into policy.yaml.
+roles:
+  admin:
+    - {dst: 10.100.0.0/24}                               # everything, any protocol
+  developer:
+    - {dst: 10.100.0.10/32, proto: tcp, ports: [8080]}   # app server only
+
+# Peers the reconciler must never lock out (stage 5 safety rail).
+admin_peers: [alice]

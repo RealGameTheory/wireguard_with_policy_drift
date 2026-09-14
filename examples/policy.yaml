@@ -1,0 +1,44 @@
+# wgdrift policy - the single statement of intent for this gateway.
+# Everything wgdrift detects and fixes is derived from this file.
+# Validate with:  wgdrift --policy /etc/wgdrift/policy.yaml policy validate
+version: 1
+
+gateway:
+  interface: wg0                 # WireGuard interface on this host
+  listen_port: 51820
+  tunnel_network: 10.10.0.0/24   # addresses handed to peers
+  protected_networks:            # what sits behind the gateway
+    - 10.100.0.0/24
+  nft_table: wgdrift             # the ONLY nftables table wgdrift manages (family inet)
+  # public_key: <gateway public key>   # optional: alerts if the private key was swapped
+
+peers:                           # one entry per enrolled WireGuard key
+  - name: alice
+    public_key: REPLACE_WITH_ALICE_PUBLIC_KEY_44_CHARS_BASE64=
+    tunnel_ip: 10.10.0.2
+    role: admin
+  - name: bob
+    public_key: REPLACE_WITH_BOB_PUBLIC_KEY_44_CHARS_BASE64XX=
+    tunnel_ip: 10.10.0.3
+    role: developer
+
+targets:                         # hosts/services whose reachability is verified
+  - name: app
+    address: 10.100.0.10
+    services: [tcp/8080, icmp]
+  - name: db
+    address: 10.100.0.20
+    services: [tcp/5432, icmp]
+
+roles:                           # what each role may reach (becomes nftables forward rules)
+  admin:
+    allow:
+      - dst: 10.100.0.0/24       # any protocol, any port
+  developer:
+    allow:
+      - dst: 10.100.0.10/32
+        proto: tcp
+        ports: [8080]
+
+safety:
+  admin_peers: [alice]           # reconciliation is rolled back if these lose access

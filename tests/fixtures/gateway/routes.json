@@ -1,0 +1,1 @@
+[{"dst":"default","gateway":"10.100.0.1","dev":"eth0","flags":[]},{"dst":"10.10.0.0/24","dev":"wg0","protocol":"kernel","scope":"link","prefsrc":"10.10.0.1","flags":[]},{"dst":"10.100.0.0/24","dev":"eth0","protocol":"kernel","scope":"link","prefsrc":"10.100.0.2","flags":[]},{"dst":"10.200.0.0/24","dev":"eth1","protocol":"kernel","scope":"link","prefsrc":"10.200.0.2","flags":[]}]

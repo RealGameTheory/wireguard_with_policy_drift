@@ -1,0 +1,25 @@
+[Unit]
+Description=wgdrift - policy-drift control loop for the WireGuard gateway
+Documentation=file:///opt/wgdrift/docs/install.md
+After=network-online.target wg-quick@wg0.service nftables.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# --reconcile makes the loop heal drift automatically. Remove it to run in
+# detect-only mode (findings are still logged and written to the status file).
+ExecStart=/opt/wgdrift/venv/bin/wgdrift --policy /etc/wgdrift/policy.yaml run --interval 10 --reconcile --status-file /run/wgdrift/status.json
+Restart=always
+RestartSec=5
+RuntimeDirectory=wgdrift
+User=root
+# The loop needs CAP_NET_ADMIN for wg/ip/nft and write access to /proc/sys/net.
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
+ProtectSystem=strict
+ReadWritePaths=/run/wgdrift /proc/sys/net
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

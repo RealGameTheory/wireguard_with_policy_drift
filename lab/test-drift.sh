@@ -31,6 +31,8 @@ scenario steal-ip     wg_ip_stolen
 scenario widen        wg_allowed_ips
 scenario drop-peer    "wg_peer_missing"
 scenario port         wg_listen_port
+scenario rogue-guest  wg_rogue_peer
+scenario promote-laptop wg_ip_stolen
 scenario forward-off  ip_forward_off
 scenario del-route    tunnel_route_missing
 scenario open-fw      nft_table_missing

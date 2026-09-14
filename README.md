@@ -94,6 +94,8 @@ make drift-test        # 11 drift scenarios: inject → detect → reconcile →
 make watch             # run the loop with auto-heal; in another shell: make inject S=steal-ip
 ```
 
+To demo with your own laptop or a friend's phone as real WireGuard clients, see [docs/demo-devices.md](docs/demo-devices.md).
+
 Scenarios in `lab/inject.sh`: rogue-peer, steal-ip, widen, drop-peer,
 port, forward-off, del-route, open-fw, lockout, extra-rule, chain-policy.
 

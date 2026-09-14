@@ -8,6 +8,8 @@
 #              widen        bob's allowed-ips becomes the whole tunnel /24
 #              drop-peer    remove alice (admin lockout)
 #              port         change the listen port
+#   devices    rogue-guest  enrol the un-enrolled guest device in the kernel only
+#              promote-laptop  give the laptop alice's admin IP as well as its own
 #   routing    forward-off  net.ipv4.ip_forward = 0 (everyone locked out)
 #              del-route    delete the return route to the tunnel network
 #   nftables   open-fw      delete the managed table (everything forwarded)
@@ -25,6 +27,8 @@ case "${1:-}" in
   widen)        gw wg set wg0 peer "$(cat keys/bob.pub)" allowed-ips 10.10.0.0/24 ;;
   drop-peer)    gw wg set wg0 peer "$(cat keys/alice.pub)" remove ;;
   port)         gw wg set wg0 listen-port 51821 ;;
+  rogue-guest)  gw wg set wg0 peer "$(cat keys/guest.pub)" allowed-ips 10.10.0.6/32 ;;
+  promote-laptop) gw wg set wg0 peer "$(cat keys/laptop.pub)" allowed-ips 10.10.0.5/32,10.10.0.2/32 ;;
   forward-off)  gw sh -c 'echo 0 > /proc/sys/net/ipv4/ip_forward' ;;
   del-route)    gw ip route del 10.10.0.0/24 dev wg0 ;;
   open-fw)      gw nft delete table inet wgdrift ;;
@@ -32,6 +36,6 @@ case "${1:-}" in
   extra-rule)   gw nft add rule inet wgdrift forward iifname wg0 ip saddr 10.10.0.3 ip daddr 10.100.0.20 tcp dport 5432 accept ;;
   chain-policy) gw nft chain inet wgdrift forward '{ policy accept; }' ;;
   reset)        docker compose restart gateway >/dev/null 2>&1; sleep 4 ;;
-  *) sed -n '2,17p' "$0"; exit 1 ;;
+  *) sed -n '2,19p' "$0"; exit 1 ;;
 esac
 echo "injected: $1"

@@ -47,3 +47,12 @@ watch:           ## run the control loop with auto-reconcile on the lab gateway 
 
 check:           ## one-shot drift check on the lab gateway
 	$(DC) exec gateway python3 -m wgdrift -p /etc/wgdrift/policy.yaml check --matrix
+
+reconcile:       ## one-shot reconcile on the lab gateway
+	$(DC) exec gateway python3 -m wgdrift -p /etc/wgdrift/policy.yaml reconcile
+
+client-conf:     ## make client-conf NAME=laptop|guest [ENDPOINT=ip:port]  -> WireGuard client config
+	lab/client-conf.sh $(NAME) $(ENDPOINT)
+
+client-qr:       ## make client-qr NAME=guest  -> QR code for the WireGuard phone app
+	lab/client-conf.sh $(NAME) $(ENDPOINT) --qr

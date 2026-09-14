@@ -8,7 +8,7 @@ mkdir -p keys
 docker image inspect wgdrift-lab >/dev/null 2>&1 || docker build -q -t wgdrift-lab . >/dev/null
 
 need=""
-for n in gateway alice bob mallory; do
+for n in gateway alice bob mallory laptop guest; do
   [ -f "keys/$n.key" ] || need="$need $n"
 done
 [ -z "$need" ] && { echo "all keys present in lab/keys/"; exit 0; }

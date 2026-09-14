@@ -111,3 +111,26 @@ and `make check` for a one-shot report with the access matrix.
   keeps a stale session for up to 25 s until the client re-handshakes. Toggle the tunnel.
 - **Your Mac's own tunnel breaks Docker**: the client only routes 10.10.0.0/24
   and 10.100.0.0/24; nothing else changes. If in doubt deactivate the tunnel.
+
+## 5. Full scenario list for a developer laptop
+
+With the `laptop` tunnel active (address 10.10.0.5, developer: app:8080 only),
+run each block in order: inject, observe on your Mac, detect, fix, observe again.
+`APP` and `DB` below are `curl -m 3 http://10.100.0.10:8080/` and
+`curl -m 3 http://10.100.0.20:5432/`.
+
+| scenario | inject | what you see on your Mac while drifted | finding | after reconcile |
+|---|---|---|---|---|
+| firewall deleted (fail-open) | `make inject S=open-fw` | DB answers | `nft_table_missing`, `unauthorized_access laptop` | DB times out |
+| chain policy flipped to accept | `make inject S=chain-policy` | DB answers | `nft_rules_drift` (policy accept) | DB times out |
+| hand-added rule for you | `make inject S="extra-rule laptop"` | DB answers | `nft_rules_drift` (1 unexpected rule), `unauthorized_access laptop` | DB times out |
+| forward chain flushed (fail-closed) | `make inject S=lockout` | APP times out too | `nft_rules_drift`, `missing_access` for everyone, ADMIN LOCKOUT | APP answers |
+| forwarding disabled | `make inject S=forward-off` | APP times out, `ping 10.10.0.1` still works | `ip_forward_off` | APP answers |
+| return route deleted | `make inject S=del-route` | APP times out | `tunnel_route_missing` | APP answers |
+| your key steals alice's IP | `make inject S="steal-ip laptop"` | nothing changes for you; alice is locked out: `docker compose -f lab/docker-compose.yml exec alice curl -m 3 http://10.100.0.20:5432/` times out | `wg_ip_stolen alice`, `missing_access alice (ADMIN LOCKOUT)`, `unauthorized_access laptop ... using address 10.10.0.2` | alice reachable again |
+| you are removed | `make inject S="drop-peer laptop"` | APP times out, app shows no new handshake | `wg_peer_missing laptop`, `missing_access laptop` | APP answers after the client re-handshakes (toggle the tunnel or wait ≤25 s) |
+| backdoor device | `make inject S=rogue-guest` | nothing for you; a friend's `guest` tunnel comes alive | `wg_rogue_peer` | guest tunnel dead again |
+| listen port changed | `make inject S=port` | tunnel keeps working ~2 min, then dies (client still sends to 51820) | `wg_listen_port` | fixed before you notice, if the loop is running |
+
+Then repeat any of them with `make watch` running in another terminal to show
+the loop healing on its own within three seconds.

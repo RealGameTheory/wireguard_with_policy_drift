@@ -20,6 +20,10 @@ peers:
   public_key: 9siVnMa3X0QquIT5BBnLkx3BHCCIox78ksxiHqANsx0=
   tunnel_ip: 10.10.0.5
   role: developer
+- name: laptop-admin
+  public_key: 2f+UWnKHlf5/4Sm+4IJTJdY+Jytokpr15CvKQ512THk=
+  tunnel_ip: 10.10.0.7
+  role: admin
 targets:
 - name: app
   address: 10.100.0.10
@@ -44,3 +48,4 @@ roles:
 safety:
   admin_peers:
   - alice
+  - laptop-admin
